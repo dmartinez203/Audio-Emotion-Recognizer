@@ -1,0 +1,111 @@
+nohup: ignoring input
+
+[notice] A new release of pip is available: 23.0.1 -> 25.3
+[notice] To update, run: pip install --upgrade pip
+
+[notice] A new release of pip is available: 23.0.1 -> 25.3
+[notice] To update, run: pip install --upgrade pip
+
+[notice] A new release of pip is available: 23.0.1 -> 25.3
+[notice] To update, run: pip install --upgrade pip
+
+[notice] A new release of pip is available: 23.0.1 -> 25.3
+[notice] To update, run: pip install --upgrade pip
+
+[notice] A new release of pip is available: 23.0.1 -> 25.3
+[notice] To update, run: pip install --upgrade pip
+
+[notice] A new release of pip is available: 23.0.1 -> 25.3
+[notice] To update, run: pip install --upgrade pip
+
+[notice] A new release of pip is available: 23.0.1 -> 25.3
+[notice] To update, run: pip install --upgrade pip
+
+[notice] A new release of pip is available: 23.0.1 -> 25.3
+[notice] To update, run: pip install --upgrade pip
+
+[notice] A new release of pip is available: 23.0.1 -> 25.3
+[notice] To update, run: pip install --upgrade pip
+2025-12-12 02:52:56.077818: I tensorflow/core/platform/cpu_feature_guard.cc:210] This TensorFlow binary is optimized to use available CPU instructions in performance-critical operations.
+To enable the following instructions: AVX2 FMA, in other operations, rebuild TensorFlow with the appropriate compiler flags.
+================================================================================
+LAMBDA LABS GPU TRAINING - AUTOMATED SETUP
+================================================================================
+
+Python version: 3.10.12
+Using TensorFlow 2.13.1 (Python 3.10 compatible)
+
+[1/3] Installing required packages...
+This may take 5-10 minutes on first run...
+  [1/9] Installing tensorflow... ✓
+  [2/9] Installing librosa... ✓
+  [3/9] Installing matplotlib... ✓
+  [4/9] Installing seaborn... ✓
+  [5/9] Installing scikit-learn... ✓
+  [6/9] Installing pandas... ✓
+  [7/9] Installing soundfile... ✓
+  [8/9] Installing tensorflow-hub... ✓
+  [9/9] Installing wget... ✓
+
+✓ All packages installed successfully
+
+[2/3] Verifying TensorFlow installation...
+✗ Error loading TensorFlow: cannot import name 'runtime_version' from 'google.protobuf' (/home/ubuntu/.pyenv/versions/3.10.12/lib/python3.10/site-packages/google/protobuf/__init__.py)
+Traceback (most recent call last):
+  File "/lambda/nfs/NeuralNetworkFinalProject/LastProject/Audio-Emotion-Recognizer/Speech_Emotion_Recognition_Notebook.py", line 279, in <module>
+    import tensorflow as tf
+  File "/home/ubuntu/.pyenv/versions/3.10.12/lib/python3.10/site-packages/tensorflow/__init__.py", line 49, in <module>
+    from tensorflow._api.v2 import __internal__
+  File "/home/ubuntu/.pyenv/versions/3.10.12/lib/python3.10/site-packages/tensorflow/_api/v2/__internal__/__init__.py", line 8, in <module>
+    from tensorflow._api.v2.__internal__ import autograph
+  File "/home/ubuntu/.pyenv/versions/3.10.12/lib/python3.10/site-packages/tensorflow/_api/v2/__internal__/autograph/__init__.py", line 8, in <module>
+    from tensorflow.python.autograph.core.ag_ctx import control_status_ctx # line: 34
+  File "/home/ubuntu/.pyenv/versions/3.10.12/lib/python3.10/site-packages/tensorflow/python/autograph/core/ag_ctx.py", line 21, in <module>
+    from tensorflow.python.autograph.utils import ag_logging
+  File "/home/ubuntu/.pyenv/versions/3.10.12/lib/python3.10/site-packages/tensorflow/python/autograph/utils/__init__.py", line 17, in <module>
+    from tensorflow.python.autograph.utils.context_managers import control_dependency_on_returns
+  File "/home/ubuntu/.pyenv/versions/3.10.12/lib/python3.10/site-packages/tensorflow/python/autograph/utils/context_managers.py", line 19, in <module>
+    from tensorflow.python.framework import ops
+  File "/home/ubuntu/.pyenv/versions/3.10.12/lib/python3.10/site-packages/tensorflow/python/framework/ops.py", line 33, in <module>
+    from tensorflow.core.framework import attr_value_pb2
+  File "/home/ubuntu/.pyenv/versions/3.10.12/lib/python3.10/site-packages/tensorflow/core/framework/attr_value_pb2.py", line 9, in <module>
+    from google.protobuf import runtime_version as _runtime_version
+ImportError: cannot import name 'runtime_version' from 'google.protobuf' (/home/ubuntu/.pyenv/versions/3.10.12/lib/python3.10/site-packages/google/protobuf/__init__.py)
+/python3.10/site-packages)
+WARNING: Ignoring invalid distribution -ensorflow (/home/ubuntu/.pyenv/versions/3.10.12/lib/python3.10/site-packages)
+WARNING: Ignoring invalid distribution -ensorflow (/home/ubuntu/.pyenv/versions/3.10.12/lib/python3.10/site-packages)
+
+[notice] A new release of pip is available: 23.0.1 -> 25.3
+[notice] To update, run: pip install --upgrade pip
+================================================================================
+LAMBDA LABS GPU TRAINING - AUTOMATED SETUP
+================================================================================
+
+Python version: 3.10.12
+Using TensorFlow 2.13.1 (Python 3.10 compatible)
+
+[1/3] Installing required packages...
+This may take 5-10 minutes on first run...
+  [1/9] Installing tensorflow... ✓
+  [2/9] Installing librosa... ✓
+  [3/9] Installing matplotlib... ✓
+  [4/9] Installing seaborn... ✓
+  [5/9] Installing scikit-learn... ✓
+  [6/9] Installing pandas... ✓
+  [7/9] Installing soundfile... ✓
+  [8/9] Installing tensorflow-hub... ✗ Failed
+      Error: Command '['/home/ubuntu/.pyenv/versions/3.10.12/bin/python3', '-m', 'pip', 'install', '-q', 'tensorflow-hub']' returned non-zero exit status 1.
+      Trying fallback TensorFlow version...
+      ✓ Installed latest TensorFlow
+  [9/9] Installing wget... ✓
+
+✓ All packages installed successfully
+
+[2/3] Verifying TensorFlow installation...
+✗ Error loading TensorFlow: No module named 'tensorflow.python'
+Traceback (most recent call last):
+  File "/lambda/nfs/NeuralNetworkFinalProject/LastProject/Audio-Emotion-Recognizer/Speech_Emotion_Recognition_Notebook.py", line 279, in <module>
+    import tensorflow as tf
+  File "/home/ubuntu/.pyenv/versions/3.10.12/lib/python3.10/site-packages/tensorflow/__init__.py", line 40, in <module>
+    from tensorflow.python import pywrap_tensorflow as _pywrap_tensorflow  # pylint: disable=unused-import
+ModuleNotFoundError: No module named 'tensorflow.python'

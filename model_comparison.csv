@@ -1,0 +1,4 @@
+model,test_accuracy,test_loss,training_time_minutes,epochs_trained,best_val_accuracy
+CNN,0.1343,2.2265,5.7747,11,0.1713
+CNN-LSTM,0.162,2.1015,6.9285,11,0.2222
+YAMNet,0.375,1.6319,0.1623,38,0.4861

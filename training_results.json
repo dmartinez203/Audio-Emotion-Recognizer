@@ -1,0 +1,47 @@
+{
+  "timestamp": "2025-12-12 03:34:04",
+  "dataset": "RAVDESS",
+  "total_samples": 1440,
+  "train_samples": 1008,
+  "val_samples": 216,
+  "test_samples": 216,
+  "num_classes": 8,
+  "emotions": [
+    "angry",
+    "calm",
+    "disgust",
+    "fearful",
+    "happy",
+    "neutral",
+    "sad",
+    "surprised"
+  ],
+  "models": {
+    "CNN": {
+      "test_accuracy": 0.13425925374031067,
+      "test_loss": 2.2265264987945557,
+      "training_time_minutes": 5.774741419156393,
+      "epochs_trained": 11,
+      "best_val_accuracy": 0.17129629850387573,
+      "parameters": 94600
+    },
+    "CNN_LSTM": {
+      "test_accuracy": 0.16203702986240387,
+      "test_loss": 2.1015119552612305,
+      "training_time_minutes": 6.928451053301493,
+      "epochs_trained": 11,
+      "best_val_accuracy": 0.2222222238779068,
+      "parameters": 1134856
+    },
+    "YAMNet": {
+      "test_accuracy": 0.375,
+      "test_loss": 1.6319364309310913,
+      "training_time_minutes": 0.16231995423634846,
+      "epochs_trained": 38,
+      "best_val_accuracy": 0.4861111044883728,
+      "parameters": 297864
+    }
+  },
+  "best_model": "YAMNet",
+  "best_accuracy": 0.375
+}

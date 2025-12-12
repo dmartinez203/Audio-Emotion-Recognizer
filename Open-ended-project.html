@@ -1,0 +1,287 @@
+```html
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Final Open-Ended Neural Network Project</title>
+  <style>
+    body {
+      font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      line-height: 1.6;
+      margin: 2rem auto;
+      max-width: 900px;
+      padding: 0 1rem;
+      color: #222;
+      background-color: #f8f8fb;
+    }
+    h1, h2, h3 {
+      color: #222;
+      margin-top: 1.5rem;
+    }
+    h1 {
+      text-align: center;
+      margin-bottom: 0.5rem;
+    }
+    h1 + p {
+      text-align: center;
+      margin-top: 0;
+      font-style: italic;
+    }
+    section {
+      background: #fff;
+      padding: 1.25rem 1.5rem;
+      margin: 1rem 0;
+      border-radius: 8px;
+      box-shadow: 0 0 4px rgba(0,0,0,0.06);
+    }
+    ul, ol {
+      margin-left: 1.5rem;
+    }
+    .highlight {
+      background: #eef3ff;
+      padding: 0.4rem 0.6rem;
+      border-radius: 6px;
+      display: inline-block;
+    }
+    .note {
+      border-left: 4px solid #5566cc;
+      padding-left: 0.75rem;
+      margin: 0.75rem 0;
+      font-size: 0.95rem;
+    }
+    .timeline li {
+      margin-bottom: 0.3rem;
+    }
+    .inline-heading {
+      font-weight: 600;
+    }
+    code {
+      font-family: "SF Mono", Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
+      font-size: 0.9em;
+      background: #f0f0f5;
+      padding: 0.05rem 0.25rem;
+      border-radius: 4px;
+    }
+  </style>
+</head>
+<body>
+  <h1>Final Open-Ended Neural Network Project</h1>
+  <p>Introduction to Neural Networks &mdash; Senior Computer Science Project (10-Day Timeline)</p>
+
+  <section>
+    <h2>1. Project Overview</h2>
+    <p>
+      This is your <strong>last project</strong> in the Introduction to Neural Networks course. 
+      The goal is to take a step beyond what we have covered in class and demonstrate that you can 
+      <span class="highlight">explore, understand, and apply a new neural network or deep learning approach independently</span>.
+    </p>
+    <p>
+      You will:
+    </p>
+    <ul>
+      <li>Choose a type of neural network (or deep learning method) that was <strong>not covered</strong> in our lectures or labs.</li>
+      <li>Identify a realistic problem or challenge whose solution can reasonably involve that model.</li>
+      <li>Conduct a brief research investigation to understand the method and related prior work.</li>
+      <li>Implement a minimal but working prototype and evaluate it on data.</li>
+      <li>Summarize your work clearly in a written report and a short demo/presentation.</li>
+    </ul>
+    <div class="note">
+      <strong>Important:</strong> This project is intentionally open-ended. You are not expected to build a production system. 
+      The focus is on learning something new, reasoning about its capabilities, and demonstrating a functioning proof-of-concept.
+    </div>
+  </section>
+
+  <section>
+    <h2>2. Core Requirements</h2>
+    <h3>2.1 New Architecture / Method</h3>
+    <p>
+      Your project must be centered on a <strong>type of neural network or deep learning algorithm that we have not studied in class</strong>. 
+      Examples <em>(only if they were not previously covered)</em> include:
+    </p>
+    <ul>
+      <li>Transformers (for text, images, or time series)</li>
+      <li>Graph Neural Networks (GNNs)</li>
+      <li>Attention-based sequence models beyond standard RNNs/LSTMs</li>
+      <li>Autoencoders and Variational Autoencoders</li>
+      <li>GAN variants (e.g., StyleGAN, CycleGAN) with a specific application</li>
+      <li>Diffusion models for image or signal generation</li>
+      <li>Capsule Networks</li>
+      <li>Spiking Neural Networks</li>
+      <li>Neural ODEs or other specialized architectures</li>
+    </ul>
+    <p>
+      If you are unsure whether a candidate method qualifies as “not covered,” choose an approach that is clearly outside the examples and material used in class.
+    </p>
+
+    <h3>2.2 Problem or Challenge</h3>
+    <p>
+      You must identify a <strong>problem or challenge</strong> whose solution can reasonably be framed as a neural network or deep learning task. Examples:
+    </p>
+    <ul>
+      <li>Predicting something from structured or time-series data (e.g., anomaly detection, demand forecasting, health indicators).</li>
+      <li>Classifying, generating, or transforming text (e.g., summarization, style transfer, code completion).</li>
+      <li>Working with images or video (e.g., super-resolution, segmentation, denoising, simple generative art).</li>
+      <li>Recommender-style tasks (e.g., basic personalized suggestions from small datasets).</li>
+      <li>Small-scale scientific, game, or simulation problems that map naturally to a model you select.</li>
+    </ul>
+    <div class="note">
+      Keep the scope practical: a problem that can be addressed with a <strong>small or medium dataset</strong> and a 
+      <strong>simple prototype</strong> is better than an overly ambitious topic that cannot be completed in 10 days.
+    </div>
+
+    <h3>2.3 Research Component</h3>
+    <p>
+      Your project must include a clear research element:
+    </p>
+    <ul>
+      <li>Read and reference at least <strong>2–3 credible sources</strong> (research papers, surveys, or technical articles) about your chosen method.</li>
+      <li>Summarize what is known: strengths, limitations, and typical use cases.</li>
+      <li>Explain why this method is appropriate (or at least plausible) for the problem you selected.</li>
+    </ul>
+    <p>
+      This is not a literature review course, but you do need to demonstrate that you engaged with existing work instead of treating this as a random coding exercise.
+    </p>
+  </section>
+
+  <section>
+    <h2>3. Suggested Directions (Not Mandatory)</h2>
+    <p>
+      The following are ideas to spark your thinking. You are free to pursue something entirely different as long as it fits the requirements.
+    </p>
+    <ul>
+      <li>
+        <span class="inline-heading">Transformers for Time-Series Forecasting:</span> 
+        Use a simplified transformer model to predict a short time-series (stock prices, sensor data, or energy usage) and compare it against a simple baseline.
+      </li>
+      <li>
+        <span class="inline-heading">Graph Neural Networks for Small Networks:</span> 
+        Model a small social network, citation network, or user–item graph and try node classification or link prediction.
+      </li>
+      <li>
+        <span class="inline-heading">Autoencoders for Dimensionality Reduction or Denoising:</span> 
+        Use an autoencoder to compress and reconstruct images or tabular data, or to denoise noisy samples.
+      </li>
+      <li>
+        <span class="inline-heading">GAN or Diffusion for Simple Image Generation:</span> 
+        Train a basic GAN or diffusion model on a small, well-curated set of images (e.g., handwritten digits or icons) and show what it learns.
+      </li>
+      <li>
+        <span class="inline-heading">Capsule Networks or Spiking Networks:</span> 
+        Explore how these architectures handle a small classification task and report what you observe compared to standard CNNs or MLPs.
+      </li>
+      <li>
+        <span class="inline-heading">Neural ODEs or Physics-Informed Models:</span> 
+        Use a neural ODE or related approach to model a very simple dynamical system (e.g., a damped oscillator) and compare to standard numerical methods.
+      </li>
+    </ul>
+  </section>
+
+  <section>
+    <h2>4. 10-Day Suggested Timeline</h2>
+    <p>This is a suggested schedule to keep the project manageable within 10 days. Adjust as needed, but do not leave everything for the last two days.</p>
+    <ol class="timeline">
+      <li><strong>Day 1–2:</strong> Choose your architecture and problem. Skim several sources and lock in your topic.</li>
+      <li><strong>Day 3–4:</strong> Do focused reading. Take notes on how the method works and typical implementations. Collect or prepare your dataset.</li>
+      <li><strong>Day 5–6:</strong> Implement a first working version (even if small). Get a model running end-to-end on a subset of your data.</li>
+      <li><strong>Day 7–8:</strong> Improve training and evaluation. Add basic metrics, plots, and comparisons to a simple baseline if possible.</li>
+      <li><strong>Day 9:</strong> Write the first full draft of your report and prepare your demo (notebook, script, or slides).</li>
+      <li><strong>Day 10:</strong> Polish everything. Make sure your code runs from start to finish, your report is coherent, and your demo is ready.</li>
+    </ol>
+    <div class="note">
+      Aim for <strong>complete and modest</strong> rather than incomplete and ambitious. A small, well-explained experiment is enough.
+    </div>
+  </section>
+
+  <section>
+    <h2>5. Required Deliverables</h2>
+    <p>You must submit the following:</p>
+    <ol>
+      <li>
+        <strong>Project Report (3–6 pages or equivalent):</strong>
+        <ul>
+          <li>Clear description of the problem or challenge you chose.</li>
+          <li>Explanation of your chosen architecture/deep learning method and why it is relevant.</li>
+          <li>Summary of your research sources and what you learned from them.</li>
+          <li>Overview of your dataset and preprocessing steps.</li>
+          <li>Model design and training procedure (hyperparameters, loss, optimizer, etc.).</li>
+          <li>Results: metrics, plots, sample outputs, or qualitative evaluation.</li>
+          <li>Discussion of what worked, what did not, and what you would try next with more time.</li>
+        </ul>
+      </li>
+      <li>
+        <strong>Code and Instructions:</strong>
+        <ul>
+          <li>All code needed to run your experiment (e.g., a Git repo or compressed folder).</li>
+          <li>A short <code>README</code> with:
+            <ul>
+              <li>Environment or library requirements (e.g., Python version, PyTorch/TensorFlow, key packages).</li>
+              <li>Exact steps to run your code and reproduce main results.</li>
+              <li>Notes on how to obtain or include the dataset.</li>
+            </ul>
+          </li>
+        </ul>
+      </li>
+      <li>
+        <strong>Short Demo or Presentation (5–8 minutes):</strong>
+        <ul>
+          <li>Briefly state the problem and chosen model.</li>
+          <li>Show your key results (plots, screenshots, short live run, etc.).</li>
+          <li>Share the single most important thing you learned from this project.</li>
+        </ul>
+      </li>
+    </ol>
+  </section>
+
+  <section>
+    <h2>6. Advice for a Successful Project</h2>
+    <ul>
+      <li>
+        <span class="inline-heading">Pick something narrow and concrete.</span> 
+        A small, clearly defined problem is better than trying to “solve everything” with a fancy model.
+      </li>
+      <li>
+        <span class="inline-heading">Start with an existing implementation.</span> 
+        It is acceptable to adapt open-source examples or tutorials, as long as you understand the code and clearly credit your sources. 
+        Your contribution should be in <em>adapting, experimenting, and explaining</em>, not just copying.
+      </li>
+      <li>
+        <span class="inline-heading">Treat baselines seriously.</span> 
+        If you can, compare your advanced model with a simple baseline (e.g., logistic regression, a small MLP, or a basic non-neural method). 
+        This shows whether the extra complexity is justified.
+      </li>
+      <li>
+        <span class="inline-heading">Expect some frustration.</span> 
+        New architectures often come with messy details (e.g., shapes, training stability). 
+        Keep notes on what breaks and how you fix it; this is part of what you will discuss in your report.
+      </li>
+      <li>
+        <span class="inline-heading">Document as you go.</span> 
+        Don’t wait until the end to write your report. Capture decisions, errors, and insights throughout the 10 days.
+      </li>
+      <li>
+        <span class="inline-heading">Respect the time limit.</span> 
+        If something is taking too long, reduce the scope: smaller dataset, fewer training epochs, or a simpler variant of the architecture.
+      </li>
+    </ul>
+  </section>
+
+  <section>
+    <h2>7. What This Project Is Really Testing</h2>
+    <p>
+      This assignment is not about who can train the largest model or get the highest accuracy. 
+      It is about:
+    </p>
+    <ul>
+      <li>Your ability to <strong>explore a new neural network or deep learning idea independently</strong>.</li>
+      <li>Your ability to <strong>formulate and scope a problem</strong> that is appropriate for that method.</li>
+      <li>Your ability to <strong>connect research reading to implementation</strong> and reflect on what you observe.</li>
+      <li>Your ability to <strong>communicate technical work</strong> clearly, honestly, and concisely.</li>
+    </ul>
+    <p>
+      Treat this as a small-scale rehearsal of what real-world work and research look like: 
+      defining a problem, finding tools, experimenting, and explaining your choices.
+    </p>
+  </section>
+</body>
+</html>
+```

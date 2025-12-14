@@ -31,3 +31,4 @@ streamlit run emotion_recognition_app.py
 - `scikit-learn` and `pandas` were removed from runtime requirements to avoid Cython builds on Streamlit Cloud; if you need to rerun training locally, install them manually: `pip install scikit-learn==1.3.2 pandas==2.1.4 cython<3`.
 - `numpy`/`scipy` pinned to 1.24.4 / 1.10.1 with `setuptools==68.2.2`, `pip<24.1`, and `wheel`; installs are wheel-only via `--only-binary=:all:` to avoid source builds.
 - `runtime.txt` specifies `python-3.10` for Streamlit Cloud. If the app shows Python 3.12/3.13 in logs, recreate the app so runtime.txt is honored.
+- Deployment note: Streamlit Cloud and GitHub Pages builds failed due to Python 3.13 wheel incompatibilities (TF/numpy). Treat this as proof-of-concept—follow the Streamlit steps above to run locally where Python 3.10/3.11 wheels install cleanly.

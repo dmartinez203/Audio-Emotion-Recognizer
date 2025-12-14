@@ -1,50 +1,32 @@
-"""
-Speech Emotion Recognition - Streamlit App (Runtime-Safe)
+"""Minimal Speech Emotion Recognition app (fresh rebuild).
 
-- No librosa dependency (uses TensorFlow + SciPy for spectrograms)
-- Safe for Streamlit Cloud / Lambda Labs where librosa wheels may be missing
-- Expects trained models: cnn_model.h5, cnn_lstm_model.h5, yamnet_model.h5
+- No librosa dependency; uses TensorFlow ops and SciPy resampling.
+- Expects one or more .h5 Keras models in the working directory.
 """
 
 from __future__ import annotations
 
 import io
 import os
-from typing import Dict, Tuple
+from dataclasses import dataclass
+from typing import Dict, List, Tuple
 
 import matplotlib.pyplot as plt
 import numpy as np
-import pandas as pd
 import soundfile as sf
 import streamlit as st
 import tensorflow as tf
 from scipy import signal
 
 
-# -----------------------------------------------------
-# App Configuration
-# -----------------------------------------------------
-st.set_page_config(
-    page_title="Speech Emotion Recognition",
-    page_icon="🎤",
-    layout="wide",
-    initial_sidebar_state="expanded",
-)
-
-st.markdown(
-    """
-    <style>
-      .main-header {font-size: 2.4rem; color: #1f77b4; text-align: center; margin-bottom: 1rem;}
-      .sub-header {font-size: 1.3rem; color: #ff7f0e; margin-top: 1.2rem;}
-    </style>
-    """,
-    unsafe_allow_html=True,
-)
-
-
-# -----------------------------------------------------
-# Constants
-# -----------------------------------------------------
+# ---------------------------
+# Settings
+# ---------------------------
+TARGET_SR = 16_000
+CLIP_DURATION = 3.0  # seconds
+N_FFT = 1024
+HOP = 256
+N_MELS = 64
 EMOTIONS = [
     "Neutral",
     "Calm",
@@ -55,297 +37,158 @@ EMOTIONS = [
     "Disgust",
     "Surprised",
 ]
-EMOTION_COLORS = {
-    "Neutral": "#95a5a6",
-    "Calm": "#3498db",
-    "Happy": "#f39c12",
-    "Sad": "#34495e",
-    "Angry": "#e74c3c",
-    "Fearful": "#9b59b6",
-    "Disgust": "#16a085",
-    "Surprised": "#e67e22",
-}
-EMOTION_EMOJI = {
-    "Neutral": "😐",
-    "Calm": "😌",
-    "Happy": "😊",
-    "Sad": "😢",
-    "Angry": "😠",
-    "Fearful": "😨",
-    "Disgust": "🤢",
-    "Surprised": "😲",
-}
-TARGET_SR = 16000
-TARGET_DURATION = 3  # seconds
-EXPECTED_FRAMES = 94  # ~3s at hop=512
 
 
-# -----------------------------------------------------
-# Model Loading
-# -----------------------------------------------------
-@st.cache_resource
-def load_models() -> Dict[str, tf.keras.Model]:
-    models: Dict[str, tf.keras.Model] = {}
-    model_paths = {
-        "CNN": "cnn_model.h5",
-        "CNN-LSTM": "cnn_lstm_model.h5",
-        "YAMNet": "yamnet_model.h5",
-    }
-
-    for name, path in model_paths.items():
-        if os.path.exists(path):
-            try:
-                models[name] = tf.keras.models.load_model(path)
-                st.sidebar.success(f"✓ {name} loaded")
-            except Exception as exc:  # noqa: PERF203
-                st.sidebar.error(f"Failed to load {name}: {exc}")
-        else:
-            st.sidebar.warning(f"⚠ {name} not found at {path}")
-
-    if not models:
-        st.sidebar.error("No models found. Place .h5 files in the working directory.")
-    return models
+# ---------------------------
+# Helpers
+# ---------------------------
+def list_model_files() -> List[str]:
+    return [f for f in os.listdir(".") if f.lower().endswith(".h5")]
 
 
-# -----------------------------------------------------
-# Audio Utilities (no librosa)
-# -----------------------------------------------------
+@st.cache_resource(show_spinner=False)
+def load_model(path: str) -> tf.keras.Model:
+    return tf.keras.models.load_model(path)
+
+
 def _to_mono(audio: np.ndarray) -> np.ndarray:
-    if audio.ndim == 2:
-        audio = np.mean(audio, axis=1)
-    return audio
+    return audio.mean(axis=1) if audio.ndim == 2 else audio
 
 
-def _resample(audio: np.ndarray, orig_sr: int, target_sr: int = TARGET_SR) -> np.ndarray:
-    if orig_sr == target_sr:
+def _resample(audio: np.ndarray, orig_sr: int) -> np.ndarray:
+    if orig_sr == TARGET_SR:
         return audio
-    duration = len(audio) / orig_sr
-    target_len = int(duration * target_sr)
-    return signal.resample(audio, target_len)
+    # Use polyphase for speed and quality.
+    return signal.resample_poly(audio, TARGET_SR, orig_sr)
 
 
-def _fix_length(audio: np.ndarray, target_len: int) -> np.ndarray:
+def _pad_or_trim(audio: np.ndarray) -> np.ndarray:
+    target_len = int(TARGET_SR * CLIP_DURATION)
     if len(audio) < target_len:
-        audio = np.pad(audio, (0, target_len - len(audio)), mode="constant")
-    else:
-        audio = audio[:target_len]
-    return audio
+        return np.pad(audio, (0, target_len - len(audio)), mode="constant")
+    return audio[:target_len]
 
 
-def compute_mel_spectrogram(
-    audio: np.ndarray,
-    sr: int = TARGET_SR,
-    n_fft: int = 2048,
-    hop_length: int = 512,
-    n_mels: int = 128,
-    fmax: int = 8000,
-) -> np.ndarray:
-    """Compute log-mel spectrogram using TensorFlow (no librosa).
-
-    Returns array shaped (n_mels, time_frames).
-    """
+def compute_log_mel(audio: np.ndarray) -> np.ndarray:
     audio_tf = tf.convert_to_tensor(audio, dtype=tf.float32)
-    stft = tf.signal.stft(audio_tf, frame_length=n_fft, frame_step=hop_length)
-    magnitude = tf.abs(stft)
-    power = tf.square(magnitude)
-
-    num_spectrogram_bins = power.shape[-1]
-    mel_matrix = tf.signal.linear_to_mel_weight_matrix(
-        num_mel_bins=n_mels,
-        num_spectrogram_bins=num_spectrogram_bins,
-        sample_rate=sr,
-        lower_edge_hertz=0,
-        upper_edge_hertz=fmax,
+    stft = tf.signal.stft(audio_tf, frame_length=N_FFT, frame_step=HOP)
+    power = tf.square(tf.abs(stft))
+    mel = tf.signal.linear_to_mel_weight_matrix(
+        num_mel_bins=N_MELS,
+        num_spectrogram_bins=power.shape[-1],
+        sample_rate=TARGET_SR,
+        lower_edge_hertz=0.0,
+        upper_edge_hertz=TARGET_SR / 2,
     )
-
-    mel_spec = tf.tensordot(power, mel_matrix, axes=1)
-    mel_spec.set_shape(power.shape[:-1].concatenate(mel_matrix.shape[-1:]))
-    mel_spec = tf.math.log(mel_spec + 1e-9)
-    mel_np = mel_spec.numpy()
-
-    # Min-max normalize per sample
-    mel_np = (mel_np - mel_np.min()) / (mel_np.max() - mel_np.min() + 1e-9)
-
-    # Transpose to (n_mels, frames)
-    mel_np = mel_np.T
-
-    # Ensure fixed frame count
-    if mel_np.shape[1] > EXPECTED_FRAMES:
-        mel_np = mel_np[:, :EXPECTED_FRAMES]
-    elif mel_np.shape[1] < EXPECTED_FRAMES:
-        pad = EXPECTED_FRAMES - mel_np.shape[1]
-        mel_np = np.pad(mel_np, ((0, 0), (0, pad)), mode="edge")
-
-    return mel_np.astype(np.float32)
+    mel_spec = tf.matmul(power, mel)
+    log_mel = tf.math.log(mel_spec + 1e-9)
+    log_mel = tf.transpose(log_mel)  # (mel, time)
+    # Normalize per clip.
+    log_mel = (log_mel - tf.reduce_min(log_mel)) / (tf.reduce_max(log_mel) - tf.reduce_min(log_mel) + 1e-9)
+    return log_mel.numpy().astype(np.float32)
 
 
-def preprocess_audio(file_bytes: bytes) -> Tuple[np.ndarray, np.ndarray, int]:
-    """Load bytes, resample, pad/truncate, and produce model-ready mel spec."""
+def preprocess(file_bytes: bytes) -> Tuple[np.ndarray, np.ndarray]:
     audio, sr = sf.read(io.BytesIO(file_bytes))
     audio = _to_mono(np.asarray(audio, dtype=np.float32))
-    audio = _resample(audio, sr, TARGET_SR)
-    audio = _fix_length(audio, TARGET_SR * TARGET_DURATION)
-
-    mel = compute_mel_spectrogram(audio, sr=TARGET_SR)
-    mel_input = mel[np.newaxis, ..., np.newaxis]  # (1, 128, 94, 1)
-
-    return mel_input, audio, TARGET_SR
+    audio = _resample(audio, sr)
+    audio = _pad_or_trim(audio)
+    log_mel = compute_log_mel(audio)
+    # Add batch and channel dims: (1, mel, time, 1)
+    return log_mel[np.newaxis, ..., np.newaxis], audio
 
 
-# -----------------------------------------------------
-# Prediction + Visualization
-# -----------------------------------------------------
-def predict_emotion(models: Dict[str, tf.keras.Model], mel_spec: np.ndarray):
-    predictions = {}
-    for name, model in models.items():
-        try:
-            probs = model.predict(mel_spec, verbose=0)[0]
-            idx = int(np.argmax(probs))
-            predictions[name] = {
-                "emotion": EMOTIONS[idx],
-                "confidence": float(probs[idx] * 100),
-                "probabilities": probs,
-            }
-        except Exception as exc:  # noqa: PERF203
-            st.warning(f"Prediction failed for {name}: {exc}")
-    return predictions
+def predict(model: tf.keras.Model, mel: np.ndarray) -> np.ndarray:
+    return model.predict(mel, verbose=0)[0]
 
 
-def plot_waveform(audio: np.ndarray, sr: int) -> plt.Figure:
-    fig, ax = plt.subplots(figsize=(10, 3))
-    t = np.linspace(0, len(audio) / sr, len(audio))
-    ax.plot(t, audio, color="#1f77b4", linewidth=0.7)
-    ax.fill_between(t, audio, alpha=0.3, color="#1f77b4")
+def plot_wave(audio: np.ndarray) -> plt.Figure:
+    t = np.linspace(0, len(audio) / TARGET_SR, len(audio))
+    fig, ax = plt.subplots(figsize=(8, 2.5))
+    ax.plot(t, audio, color="#1f77b4", linewidth=0.8)
     ax.set_xlabel("Time (s)")
     ax.set_ylabel("Amplitude")
     ax.set_title("Waveform")
-    ax.grid(True, alpha=0.3)
+    ax.grid(alpha=0.3)
     fig.tight_layout()
     return fig
 
 
-def plot_mel(mel_spec: np.ndarray) -> plt.Figure:
-    fig, ax = plt.subplots(figsize=(10, 4))
-    img = ax.imshow(mel_spec, aspect="auto", origin="lower", cmap="viridis")
+def plot_mel(log_mel: np.ndarray) -> plt.Figure:
+    fig, ax = plt.subplots(figsize=(8, 3))
+    img = ax.imshow(log_mel, origin="lower", aspect="auto", cmap="viridis")
     ax.set_xlabel("Frames")
     ax.set_ylabel("Mel bins")
     ax.set_title("Log-Mel Spectrogram")
-    fig.colorbar(img, ax=ax)
+    fig.colorbar(img, ax=ax, fraction=0.046, pad=0.04)
     fig.tight_layout()
     return fig
 
 
-def plot_probs(predictions: Dict[str, dict]) -> plt.Figure:
-    fig, axes = plt.subplots(1, len(predictions), figsize=(14, 4))
-    if len(predictions) == 1:
-        axes = [axes]
-    for ax, (name, pred) in zip(axes, predictions.items()):
-        probs = pred["probabilities"]
-        colors = [EMOTION_COLORS[e] for e in EMOTIONS]
-        ax.bar(range(len(EMOTIONS)), probs, color=colors, alpha=0.8, edgecolor="black")
-        ax.set_xticks(range(len(EMOTIONS)))
-        ax.set_xticklabels(EMOTIONS, rotation=45, ha="right")
-        ax.set_ylim(0, 1)
-        ax.set_title(f"{name}: {pred['emotion']}")
-        ax.grid(axis="y", alpha=0.3)
+def plot_probs(probs: np.ndarray) -> plt.Figure:
+    fig, ax = plt.subplots(figsize=(8, 2.5))
+    ax.bar(range(len(EMOTIONS)), probs, color="#1f77b4", alpha=0.8)
+    ax.set_xticks(range(len(EMOTIONS)))
+    ax.set_xticklabels(EMOTIONS, rotation=35, ha="right")
+    ax.set_ylim(0, 1)
+    ax.set_ylabel("Probability")
+    ax.set_title("Model probabilities")
+    ax.grid(axis="y", alpha=0.3)
     fig.tight_layout()
     return fig
 
 
-def summary_table(predictions: Dict[str, dict]) -> pd.DataFrame:
-    rows = []
-    for name, pred in predictions.items():
-        probs = pred["probabilities"]
-        top2 = np.argsort(probs)[-2:][::-1]
-        rows.append(
-            {
-                "Model": name,
-                "Prediction": f"{EMOTION_EMOJI[pred['emotion']]} {pred['emotion']}",
-                "Confidence": f"{pred['confidence']:.2f}%",
-                "Top-2": EMOTIONS[top2[1]],
-                "Top-2 Conf": f"{probs[top2[1]] * 100:.2f}%",
-            }
-        )
-    return pd.DataFrame(rows)
+@dataclass
+class Prediction:
+    label: str
+    confidence: float
+    probs: np.ndarray
 
 
-# -----------------------------------------------------
+def run_inference(model_path: str, mel: np.ndarray) -> Prediction:
+    model = load_model(model_path)
+    probs = predict(model, mel)
+    idx = int(np.argmax(probs))
+    return Prediction(label=EMOTIONS[idx], confidence=float(probs[idx]), probs=probs)
+
+
+# ---------------------------
 # Streamlit UI
-# -----------------------------------------------------
-def main():
-    st.markdown('<h1 class="main-header">🎤 Speech Emotion Recognition</h1>', unsafe_allow_html=True)
-    st.markdown(
-        "<p style='text-align: center; font-size: 1.1rem; color: #555;'>Upload audio to detect emotions using your trained models.</p>",
-        unsafe_allow_html=True,
-    )
+# ---------------------------
+def main() -> None:
+    st.set_page_config(page_title="Speech Emotion Recognition", page_icon="🎤", layout="wide")
+    st.title("🎤 Speech Emotion Recognition")
+    st.write("Upload audio, select a model, and view predictions. Fresh minimal rebuild.")
 
-    # Sidebar - models
-    st.sidebar.title("⚙️ Configuration")
-    st.sidebar.subheader("Models")
-    models = load_models()
-    if not models:
-        st.stop()
+    model_files = list_model_files()
+    if not model_files:
+        st.error("No .h5 models found in the working directory.")
+        return
 
-    selected_models = [m for m in models.keys() if st.sidebar.checkbox(f"Use {m}", value=True)]
-    if not selected_models:
-        st.warning("Select at least one model to proceed.")
-        st.stop()
+    choice = st.sidebar.selectbox("Model file", model_files)
+    uploaded = st.file_uploader("Upload audio (wav/mp3/ogg/flac)", type=["wav", "mp3", "ogg", "flac"])
 
-    st.sidebar.markdown("---")
-    st.sidebar.info("Expected files: cnn_model.h5, cnn_lstm_model.h5, yamnet_model.h5")
-
-    # Main input
-    st.markdown('<h2 class="sub-header">📂 Input Audio</h2>', unsafe_allow_html=True)
-    uploaded = st.file_uploader("Upload an audio file (WAV/MP3/OGG/FLAC)", type=["wav", "mp3", "ogg", "flac"])
-
-    if uploaded is None:
-        st.info("Upload a 3-second clip to see predictions.")
-        st.stop()
+    if not uploaded:
+        st.info("Please upload an audio clip (≈3 seconds recommended).")
+        return
 
     file_bytes = uploaded.read()
     st.audio(file_bytes, format="audio/wav")
 
-    with st.spinner("Processing audio..."):
-        mel_input, audio, sr = preprocess_audio(file_bytes)
-        selected = {k: v for k, v in models.items() if k in selected_models}
-        predictions = predict_emotion(selected, mel_input)
+    with st.spinner("Processing and running inference..."):
+        mel, audio = preprocess(file_bytes)
+        pred = run_inference(choice, mel)
 
-    if not predictions:
-        st.error("No predictions available. Check models and input.")
-        st.stop()
+    st.subheader("Prediction")
+    st.markdown(f"**{pred.label}**  —  confidence: {pred.confidence*100:.1f}%")
 
-    tab1, tab2, tab3, tab4 = st.tabs(["Predictions", "Waveform", "Mel-Spectrogram", "Probabilities"])
+    col1, col2 = st.columns(2)
+    with col1:
+        st.pyplot(plot_wave(audio))
+    with col2:
+        st.pyplot(plot_mel(mel[0, :, :, 0]))
 
-    with tab1:
-        cols = st.columns(len(predictions))
-        for col, (name, pred) in zip(cols, predictions.items()):
-            emotion = pred["emotion"]
-            col.markdown(
-                f"""
-                <div style='background:{EMOTION_COLORS[emotion]}; padding:18px; border-radius:10px; color:white; text-align:center;'>
-                    <h3>{name}</h3>
-                    <h1>{EMOTION_EMOJI[emotion]}</h1>
-                    <h2>{emotion}</h2>
-                    <p>{pred['confidence']:.1f}%</p>
-                </div>
-                """,
-                unsafe_allow_html=True,
-            )
-        st.markdown("---")
-        st.subheader("Details")
-        st.dataframe(summary_table(predictions), use_container_width=True)
-
-    with tab2:
-        st.pyplot(plot_waveform(audio, sr))
-
-    with tab3:
-        st.pyplot(plot_mel(mel_input[0, :, :, 0]))
-
-    with tab4:
-        st.pyplot(plot_probs(predictions))
-
-    st.markdown("---")
-    st.caption("Speech Emotion Recognition • TensorFlow • Streamlit • No librosa dependency")
+    st.pyplot(plot_probs(pred.probs))
 
 
 if __name__ == "__main__":

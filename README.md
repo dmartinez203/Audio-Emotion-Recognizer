@@ -29,5 +29,5 @@ streamlit run emotion_recognition_app.py
 - Extra artifacts, duplicate models, and intermediate exports were removed for a clean submission.
 - Requirements pin TensorFlow 2.20.0 so Streamlit Cloud can install without platform-specific wheels.
 - `scikit-learn` and `pandas` were removed from runtime requirements to avoid Cython builds on Streamlit Cloud; if you need to rerun training locally, install them manually: `pip install scikit-learn==1.3.2 pandas==2.1.4 cython<3`.
-- `numpy`/`scipy` pinned to 1.25.2 / 1.10.1 with `setuptools`/`wheel` to ensure manylinux wheels (no source builds) on Streamlit Cloud.
+- `numpy`/`scipy` pinned to 1.25.2 / 1.10.1 with `setuptools==68.2.2`, `pip<25`, and `wheel` to keep distutils available and avoid source builds on Streamlit Cloud.
 - `runtime.txt` specifies `python-3.10` for Streamlit Cloud to ensure binary wheels for numpy/scipy.

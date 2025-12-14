@@ -147,11 +147,10 @@ export default function App() {
   return (
     <div className="page">
       <header className="hero">
-        <p className="pill">GitHub Pages friendly · React + Vite</p>
-        <h1>Audio Emotion Recognizer (UI)</h1>
+        <p className="pill">React + Vite · GitHub Pages</p>
+        <h1>Audio Emotion Recognizer</h1>
         <p className="lede">
-          A lightweight React front-end you can deploy on GitHub Pages. Upload an audio clip, preview it,
-          and forward it to your own API or a TensorFlow.js model. No Streamlit or server required.
+          My simple front-end to upload a clip, preview it, and run emotion inference in the browser (or hit a backend if I hook one up).
         </p>
         <div className="cta-row">
           <a className="btn primary" href="https://github.com/dmartinez203/Audio-Emotion-Recognizer" target="_blank" rel="noreferrer">
@@ -178,7 +177,7 @@ export default function App() {
             <input type="file" accept="audio/*" onChange={onFileChange} />
             <div>
               <p className="drop-title">Drop audio here or click to browse</p>
-              <p className="muted">Your file stays in-browser until you wire a backend.</p>
+              <p className="muted">File stays in the browser unless I add a backend call.</p>
             </div>
           </label>
 
@@ -203,7 +202,7 @@ export default function App() {
           {previewUrl && (
             <div className="player">
               <audio src={previewUrl} controls preload="metadata" />
-              <p className="muted">Preview only. Add your inference call in code to get predictions.</p>
+              <p className="muted">Preview only. Inference runs locally once the model is present.</p>
             </div>
           )}
 
@@ -220,9 +219,9 @@ export default function App() {
           <div className="next">
             <p className="label">Next actions</p>
             <ul>
-              <li>Place your converted TF.js model at <code>public/models/best/model.json</code> (keeps weights locally).</li>
-              <li>Or switch to a backend /predict endpoint if you prefer server inference.</li>
-              <li>Add confidence bars for the eight emotions: {EMOTIONS.join(', ')}.</li>
+              <li>Drop the converted TF.js model at <code>public/models/best/model.json</code> to keep everything on-device.</li>
+              <li>If I want a server, I'll point this to a /predict endpoint instead.</li>
+              <li>Confidence bars cover: {EMOTIONS.join(', ')}.</li>
             </ul>
           </div>
         </section>
@@ -306,8 +305,7 @@ Response 200
             <li>GitHub → Settings → Pages → Source: gh-pages branch, / root</li>
           </ol>
           <p className="muted">
-            Vite base is already set to <code>/Audio-Emotion-Recognizer/</code> for GitHub Pages.
-            If you fork/rename the repo, update <code>vite.config.js</code> accordingly.
+            Base path is <code>/Audio-Emotion-Recognizer/</code>. If I rename/fork, I’ll tweak <code>vite.config.js</code>.
           </p>
         </section>
 
@@ -319,9 +317,7 @@ Response 200
             </div>
           </div>
           <p className="muted">
-            Training artifacts (.h5) and the notebook stay in the repo root. This UI is decoupled so you
-            can evolve the backend independently. For client-side inference, convert a selected model to
-            TensorFlow.js with:
+            My .h5 models and notebook stay in the repo root. For client-side inference, I convert one to TF.js with:
           </p>
           <pre className="code small">
 {`pip install tensorflowjs

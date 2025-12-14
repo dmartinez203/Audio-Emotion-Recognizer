@@ -1,6 +1,6 @@
-# Streamlit application requirements (CPU-only, no librosa)
+# Streamlit application requirements (no librosa)
 streamlit==1.39.0
-tensorflow-cpu==2.13.1
+tensorflow==2.20.0
 numpy<2.0.0
 matplotlib
 pandas

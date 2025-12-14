@@ -18,6 +18,12 @@ import streamlit as st
 import tensorflow as tf
 from scipy import signal
 
+# Lazy import for YAMNet to avoid startup cost if unused.
+try:
+    import tensorflow_hub as hub
+except Exception:  # noqa: BLE001
+    hub = None
+
 
 # ---------------------------
 # Settings
@@ -47,8 +53,49 @@ def list_model_files() -> List[str]:
 
 
 @st.cache_resource(show_spinner=False)
+def validate_models(paths: List[str]) -> Tuple[List[str], Dict[str, str]]:
+    ok: List[str] = []
+    bad: Dict[str, str] = {}
+    for p in paths:
+        try:
+            _ = tf.keras.models.load_model(
+                p,
+                custom_objects={
+                    "InputLayer": CompatibleInputLayer,
+                    "DTypePolicy": tf.keras.mixed_precision.Policy,
+                    "Policy": tf.keras.mixed_precision.Policy,
+                },
+                compile=False,
+                safe_mode=False,
+            )
+            ok.append(p)
+        except Exception as exc:  # noqa: BLE001
+            bad[p] = str(exc)
+    return ok, bad
+
+
+@st.cache_resource(show_spinner=False)
 def load_model(path: str) -> tf.keras.Model:
-    return tf.keras.models.load_model(path)
+    try:
+        return tf.keras.models.load_model(
+            path,
+            custom_objects={
+                "InputLayer": CompatibleInputLayer,
+                "DTypePolicy": tf.keras.mixed_precision.Policy,
+                "Policy": tf.keras.mixed_precision.Policy,
+            },
+            compile=False,
+            safe_mode=False,
+        )
+    except Exception as exc:
+        # Common case: TF/Keras cannot deserialize non-Keras .h5 (e.g., TFJS or incompatible export).
+        msg = (
+            f"Failed to load model '{path}'. This file may not be a Keras .h5 saved with TF 2.x. "
+            "Use the notebook-exported models: cnn_final_model.h5, cnn_lstm_final_model.h5, "
+            "or yamnet_classifier_final_model.h5.\n\n"
+            f"Loader error: {exc}"
+        )
+        raise RuntimeError(msg) from exc
 
 
 def _to_mono(audio: np.ndarray) -> np.ndarray:
@@ -67,6 +114,17 @@ def _pad_or_trim(audio: np.ndarray) -> np.ndarray:
     if len(audio) < target_len:
         return np.pad(audio, (0, target_len - len(audio)), mode="constant")
     return audio[:target_len]
+
+
+class CompatibleInputLayer(tf.keras.layers.InputLayer):
+    """InputLayer that tolerates legacy configs containing 'batch_shape'."""
+
+    @classmethod
+    def from_config(cls, config):
+        cfg = dict(config)
+        if "batch_shape" in cfg and "batch_input_shape" not in cfg:
+            cfg["batch_input_shape"] = cfg.pop("batch_shape")
+        return super().from_config(cfg)
 
 
 def compute_log_mel(audio: np.ndarray) -> np.ndarray:
@@ -88,18 +146,82 @@ def compute_log_mel(audio: np.ndarray) -> np.ndarray:
     return log_mel.numpy().astype(np.float32)
 
 
-def preprocess(file_bytes: bytes) -> Tuple[np.ndarray, np.ndarray]:
+def compute_yamnet_embedding(audio: np.ndarray) -> np.ndarray:
+    yamnet = load_yamnet_model()
+    waveform_tf = tf.convert_to_tensor(audio, dtype=tf.float32)
+    waveform_tf = tf.reshape(waveform_tf, [-1])  # ensure 1-D as YAMNet expects
+    _scores, embeddings, _spec = yamnet(waveform_tf)
+    # embeddings shape: (frames, 1024); average across frames to get 1024-d
+    emb = tf.reduce_mean(embeddings, axis=0)  # (1024,)
+    emb = tf.reshape(emb, [1, -1])  # (1, 1024) for classifier
+    return emb.numpy().astype(np.float32)
+
+
+def preprocess(file_bytes: bytes, model: tf.keras.Model, model_path: str) -> Tuple[np.ndarray, np.ndarray, str]:
+    """Return model-ready features, raw audio, and the feature type used."""
+
     audio, sr = sf.read(io.BytesIO(file_bytes))
     audio = _to_mono(np.asarray(audio, dtype=np.float32))
     audio = _resample(audio, sr)
     audio = _pad_or_trim(audio)
+
+    if is_yamnet_classifier(model, model_path=model_path):
+        emb = compute_yamnet_embedding(audio)
+        return emb, audio, "yamnet"
+
     log_mel = compute_log_mel(audio)
-    # Add batch and channel dims: (1, mel, time, 1)
-    return log_mel[np.newaxis, ..., np.newaxis], audio
+    return log_mel[np.newaxis, ..., np.newaxis], audio, "mel"
 
 
 def predict(model: tf.keras.Model, mel: np.ndarray) -> np.ndarray:
     return model.predict(mel, verbose=0)[0]
+
+
+def is_yamnet_classifier(model: tf.keras.Model, model_path: str = "") -> bool:
+    """Detect if the model expects a 1024-d embedding (YAMNet head)."""
+
+    def _is_1024(shape_like) -> bool:
+        if not isinstance(shape_like, (list, tuple)):
+            return False
+        if len(shape_like) == 2 and shape_like[1] == 1024:
+            return True
+        return False
+
+    try:
+        shapes = model.input_shape
+    except Exception:  # noqa: BLE001
+        shapes = None
+
+    # Check direct input_shape (can be tuple or list of tuples)
+    if shapes is not None:
+        if _is_1024(shapes):
+            return True
+        if isinstance(shapes, (list, tuple)):
+            for s in shapes:
+                if _is_1024(s):
+                    return True
+
+    # Fall back to first layer input shapes
+    for layer in getattr(model, "layers", []):
+        ishape = getattr(layer, "input_shape", None)
+        if ishape is None:
+            continue
+        if _is_1024(ishape):
+            return True
+        if isinstance(ishape, (list, tuple)):
+            for s in ishape if isinstance(ishape, (list, tuple)) else []:
+                if _is_1024(s):
+                    return True
+
+    # Final fallback: file name heuristic
+    return "yamnet" in model_path.lower()
+
+
+@st.cache_resource(show_spinner=False)
+def load_yamnet_model():
+    if hub is None:
+        raise RuntimeError("tensorflow_hub is not installed; required for YAMNet classifier.")
+    return hub.load("https://tfhub.dev/google/yamnet/1")
 
 
 def plot_wave(audio: np.ndarray) -> plt.Figure:
@@ -145,9 +267,8 @@ class Prediction:
     probs: np.ndarray
 
 
-def run_inference(model_path: str, mel: np.ndarray) -> Prediction:
-    model = load_model(model_path)
-    probs = predict(model, mel)
+def run_inference(model: tf.keras.Model, features: np.ndarray) -> Prediction:
+    probs = predict(model, features)
     idx = int(np.argmax(probs))
     return Prediction(label=EMOTIONS[idx], confidence=float(probs[idx]), probs=probs)
 
@@ -165,7 +286,20 @@ def main() -> None:
         st.error("No .h5 models found in the working directory.")
         return
 
-    choice = st.sidebar.selectbox("Model file", model_files)
+    valid_models, invalid_models = validate_models(model_files)
+    if not valid_models:
+        st.error("All detected .h5 files failed to load. See details below.")
+        with st.expander("Model load errors"):
+            for name, err in invalid_models.items():
+                st.markdown(f"**{name}** — {err}")
+        return
+
+    if invalid_models:
+        with st.expander("Skipped incompatible models"):
+            for name, err in invalid_models.items():
+                st.markdown(f"**{name}** — {err}")
+
+    choice = st.sidebar.selectbox("Model file", valid_models)
     uploaded = st.file_uploader("Upload audio (wav/mp3/ogg/flac)", type=["wav", "mp3", "ogg", "flac"])
 
     if not uploaded:
@@ -176,8 +310,13 @@ def main() -> None:
     st.audio(file_bytes, format="audio/wav")
 
     with st.spinner("Processing and running inference..."):
-        mel, audio = preprocess(file_bytes)
-        pred = run_inference(choice, mel)
+        try:
+            model = load_model(choice)
+            features, audio, feat_kind = preprocess(file_bytes, model, choice)
+            pred = run_inference(model, features)
+        except RuntimeError as exc:
+            st.error(str(exc))
+            st.stop()
 
     st.subheader("Prediction")
     st.markdown(f"**{pred.label}**  —  confidence: {pred.confidence*100:.1f}%")
@@ -186,7 +325,10 @@ def main() -> None:
     with col1:
         st.pyplot(plot_wave(audio))
     with col2:
-        st.pyplot(plot_mel(mel[0, :, :, 0]))
+        if feat_kind == "mel":
+            st.pyplot(plot_mel(features[0, :, :, 0]))
+        else:
+            st.info("YAMNet embedding computed (1024-d); spectrogram skipped.")
 
     st.pyplot(plot_probs(pred.probs))
 

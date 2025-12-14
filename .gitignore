@@ -1,22 +1,29 @@
-# Node / React
-frontend/node_modules
-frontend/dist
-
-# Python / data
-__pycache__
-*.pyc
+# Python
+__pycache__/
+*.py[cod]
 *.pyo
 *.pyd
-*.DS_Store
-.env
-.env.*
+*.so
+*.egg-info/
+.ipynb_checkpoints/
 
-# Logs
-logs/
-*.log
-
-# Notebook checkpoints
-.ipynb_checkpoints
+# Environments
+.env*
+.venv*
+venv/
+ENV/
 
 # OS
 .DS_Store
+
+# Build / artifacts
+build/
+dist/
+
+# Node / previous static site
+node_modules/
+frontend/
+docs/
+
+# TensorBoard and training
+logs/

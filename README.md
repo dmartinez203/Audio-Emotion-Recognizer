@@ -10,7 +10,7 @@ Minimal submission package with three trained models (CNN, CNN-LSTM, YAMNet tran
 
 ## Setup
 1) Python 3.11 recommended. Create/activate a virtual env.
-2) Install deps (macOS Metal-optimized TF included):
+2) Install deps (Streamlit Cloud friendly TF 2.20.0):
 ```bash
 pip install -r requirements.txt
 ```
@@ -27,4 +27,4 @@ streamlit run emotion_recognition_app.py
 
 ## Notes
 - Extra artifacts, duplicate models, and intermediate exports were removed for a clean submission.
-- If TF Hub is missing, install: `pip install tensorflow-hub`.
+- Requirements pin TensorFlow 2.20.0 so Streamlit Cloud can install without platform-specific wheels.

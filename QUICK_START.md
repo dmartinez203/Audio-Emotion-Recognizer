@@ -72,3 +72,13 @@ RTX 3090: ~$1.00 total (1.5-2 hours @ $0.50/hr)
 **THAT'S IT!** Just upload and run. Everything is automated.
 
 Good luck! 🎓
+
+---
+
+## 🌐 Frontend (React + GitHub Pages)
+
+- Location: `frontend/` (Vite + React, no Streamlit).
+- Local dev: `cd frontend && npm install && npm run dev`.
+- Build: `npm run build` → outputs to `frontend/dist`.
+- Deploy to GitHub Pages: `npm run deploy` (uses `gh-pages`, base set to `/Audio-Emotion-Recognizer/`).
+- Hook to backend: wire `App.jsx` to POST your audio file to `/predict` (see suggested contract in the UI). For client-only, convert a `.h5` model to TF.js and load it in `App.jsx`.

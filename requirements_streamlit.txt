@@ -1,9 +1,14 @@
-# Streamlit application requirements (no librosa)
-streamlit==1.39.0
-tensorflow-cpu==2.20.0
-numpy<2.0.0
-matplotlib
-pandas
-soundfile
-scipy
-pillow
+--only-binary=:all:
+pip<24.1
+setuptools==68.2.2
+wheel
+tensorflow==2.20.0
+tensorflow-hub==0.15.0
+numpy==1.24.4
+scipy==1.10.1
+librosa==0.10.1
+soundfile==0.12.1
+matplotlib==3.8.4
+seaborn==0.13.2
+streamlit==1.32.2
+wget==3.2
